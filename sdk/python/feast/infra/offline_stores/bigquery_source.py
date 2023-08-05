@@ -103,10 +103,7 @@ class BigQuerySource(DataSource):
 
     def get_table_query_string(self) -> str:
         """Returns a string that can directly be used to reference this table in SQL"""
-        if self.table_ref:
-            return f"`{self.table_ref}`"
-        else:
-            return f"({self.query})"
+        return f"`{self.table_ref}`" if self.table_ref else f"({self.query})"
 
     @staticmethod
     def source_datatype_to_feast_value_type() -> Callable[[str], ValueType]:
@@ -123,16 +120,14 @@ class BigQuerySource(DataSource):
             if not isinstance(table_schema[0], bigquery.schema.SchemaField):
                 raise TypeError("Could not parse BigQuery table schema.")
 
-            name_type_pairs = [(field.name, field.field_type) for field in table_schema]
+            return [(field.name, field.field_type) for field in table_schema]
         else:
             bq_columns_query = f"SELECT * FROM ({self.query}) LIMIT 1"
             queryRes = client.query(bq_columns_query).result()
-            name_type_pairs = [
+            return [
                 (schema_field.name, schema_field.field_type)
                 for schema_field in queryRes.schema
             ]
-
-        return name_type_pairs
 
 
 class BigQueryOptions:
@@ -184,12 +179,10 @@ class BigQueryOptions:
             Returns a BigQueryOptions object based on the bigquery_options protobuf
         """
 
-        bigquery_options = cls(
+        return cls(
             table_ref=bigquery_options_proto.table_ref,
             query=bigquery_options_proto.query,
         )
-
-        return bigquery_options
 
     def to_proto(self) -> DataSourceProto.BigQueryOptions:
         """
@@ -199,8 +192,7 @@ class BigQueryOptions:
             BigQueryOptionsProto protobuf
         """
 
-        bigquery_options_proto = DataSourceProto.BigQueryOptions(
-            table_ref=self.table_ref, query=self.query,
+        return DataSourceProto.BigQueryOptions(
+            table_ref=self.table_ref,
+            query=self.query,
         )
-
-        return bigquery_options_proto

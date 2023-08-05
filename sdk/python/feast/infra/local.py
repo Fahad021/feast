@@ -74,9 +74,7 @@ class LocalProvider(Provider):
         entity_keys: List[EntityKeyProto],
         requested_features: List[str] = None,
     ) -> List[Tuple[Optional[datetime], Optional[Dict[str, ValueProto]]]]:
-        result = self.online_store.online_read(config, table, entity_keys)
-
-        return result
+        return self.online_store.online_read(config, table, entity_keys)
 
     def materialize_single_feature_view(
         self,
@@ -88,10 +86,10 @@ class LocalProvider(Provider):
         project: str,
         tqdm_builder: Callable[[int], tqdm],
     ) -> None:
-        entities = []
-        for entity_name in feature_view.entities:
-            entities.append(registry.get_entity(entity_name, project))
-
+        entities = [
+            registry.get_entity(entity_name, project)
+            for entity_name in feature_view.entities
+        ]
         (
             join_key_columns,
             feature_name_columns,

@@ -37,9 +37,7 @@ class FileRetrievalJob(RetrievalJob):
         self.evaluation_function = evaluation_function
 
     def to_df(self):
-        # Only execute the evaluation function to build the final historical retrieval dataframe at the last moment.
-        df = self.evaluation_function()
-        return df
+        return self.evaluation_function()
 
     def to_arrow(self):
         # Only execute the evaluation function to build the final historical retrieval dataframe at the last moment.

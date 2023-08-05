@@ -92,7 +92,7 @@ class OAuthMetadataPlugin(grpc.AuthMetadataPlugin):
 
     def get_signed_meta(self):
         """ Creates a signed authorization metadata token."""
-        return (("authorization", "Bearer {}".format(self._token)),)
+        return (("authorization", f"Bearer {self._token}"), )
 
     def _refresh_token(self, config: Config):
         """ Refreshes OAuth token and persists it in memory """
@@ -174,7 +174,7 @@ class GoogleOpenIDAuthMetadataPlugin(grpc.AuthMetadataPlugin):
 
         if time.time() > self._token_expiry_ts:
             self._refresh_token()
-        return (("authorization", "Bearer {}".format(self._token)),)
+        return (("authorization", f"Bearer {self._token}"), )
 
     def _refresh_token(self):
         """ Refreshes Google ID token and persists it in memory """

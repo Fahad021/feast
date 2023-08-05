@@ -51,17 +51,16 @@ def _gen_remote_uri(
     remote_path_suffix: Optional[str],
     sha256sum: Optional[str],
 ) -> ParseResult:
-    if remote_uri is None:
-        assert remote_path_prefix is not None and remote_path_suffix is not None
-
-        if sha256sum is None:
-            sha256sum = _hash_fileobj(fileobj)
-
-        return urlparse(
-            os.path.join(remote_path_prefix, f"{sha256sum}{remote_path_suffix}")
-        )
-    else:
+    if remote_uri is not None:
         return remote_uri
+    assert remote_path_prefix is not None and remote_path_suffix is not None
+
+    if sha256sum is None:
+        sha256sum = _hash_fileobj(fileobj)
+
+    return urlparse(
+        os.path.join(remote_path_prefix, f"{sha256sum}{remote_path_suffix}")
+    )
 
 
 class AbstractStagingClient(ABC):
@@ -173,19 +172,18 @@ class GCSClient(AbstractStagingClient):
         bucket, path = self._uri_to_bucket_key(uri)
         gs_bucket = self.gcs_client.get_bucket(bucket)
 
-        if "*" in path:
-            regex = re.compile(path.replace("*", ".*?").strip("/"))
-            blob_list = gs_bucket.list_blobs(
-                prefix=path.strip("/").split("*")[0], delimiter="/"
-            )
-            # File path should not be in path (file path must be longer than path)
-            return [
-                f"{GS}://{bucket}/{file}"
-                for file in [x.name for x in blob_list]
-                if re.match(regex, file) and file not in path
-            ]
-        else:
+        if "*" not in path:
             return [f"{GS}://{bucket}/{path}"]
+        regex = re.compile(path.replace("*", ".*?").strip("/"))
+        blob_list = gs_bucket.list_blobs(
+            prefix=path.strip("/").split("*")[0], delimiter="/"
+        )
+        # File path should not be in path (file path must be longer than path)
+        return [
+            f"{GS}://{bucket}/{file}"
+            for file in [x.name for x in blob_list]
+            if re.match(regex, file) and file not in path
+        ]
 
     def _uri_to_bucket_key(self, remote_path: ParseResult) -> Tuple[str, str]:
         assert remote_path.hostname is not None
@@ -253,19 +251,18 @@ class S3Client(AbstractStagingClient):
         """
 
         bucket, path = self._uri_to_bucket_key(uri)
-        if "*" in path:
-            regex = re.compile(path.replace("*", ".*?").strip("/"))
-            blob_list = self.s3_client.list_objects(
-                Bucket=bucket, Prefix=path.strip("/").split("*")[0], Delimiter="/"
-            )
-            # File path should not be in path (file path must be longer than path)
-            return [
-                f"{self.url_scheme}://{bucket}/{file}"
-                for file in [x["Key"] for x in blob_list["Contents"]]
-                if re.match(regex, file) and file not in path
-            ]
-        else:
+        if "*" not in path:
             return [f"{self.url_scheme}://{bucket}/{path}"]
+        regex = re.compile(path.replace("*", ".*?").strip("/"))
+        blob_list = self.s3_client.list_objects(
+            Bucket=bucket, Prefix=path.strip("/").split("*")[0], Delimiter="/"
+        )
+        # File path should not be in path (file path must be longer than path)
+        return [
+            f"{self.url_scheme}://{bucket}/{file}"
+            for file in [x["Key"] for x in blob_list["Contents"]]
+            if re.match(regex, file) and file not in path
+        ]
 
     def _uri_to_bucket_key(self, remote_path: ParseResult) -> Tuple[str, str]:
         assert remote_path.hostname is not None
@@ -291,10 +288,7 @@ class S3Client(AbstractStagingClient):
 
         try:
             head_response = self.s3_client.head_object(Bucket=bucket, Key=key)
-            if head_response["Metadata"]["sha256sum"] == sha256sum:
-                # File already exists
-                return remote_uri
-            else:
+            if head_response["Metadata"]["sha256sum"] != sha256sum:
                 print(f"Uploading {local_path} to {remote_uri}")
                 self.s3_client.upload_fileobj(
                     fileobj,
@@ -302,7 +296,8 @@ class S3Client(AbstractStagingClient):
                     key,
                     ExtraArgs={"Metadata": {"sha256sum": sha256sum}},
                 )
-                return remote_uri
+            # File already exists
+            return remote_uri
         except botocore.exceptions.ClientError as e:
             if e.response["Error"]["Code"] != "404":
                 raise
@@ -359,22 +354,21 @@ class AzureBlobClient(AbstractStagingClient):
         """
 
         bucket, path = self._uri_to_bucket_key(uri)
-        if "*" in path:
-            regex = re.compile(path.replace("*", ".*?").strip("/"))
-            container_client = self.blob_service_client.get_container_client(bucket)
-            blob_list = container_client.list_blobs(
-                name_starts_with=path.strip("/").split("*")[0]
-            )
-            # File path should not be in path (file path must be longer than path)
-            return [
-                f"wasbs://{bucket}@{self.account_name}.blob.core.windows.net/{file}"
-                for file in [x.name for x in blob_list]
-                if re.match(regex, file) and file not in path
-            ]
-        else:
+        if "*" not in path:
             return [
                 f"wasbs://{bucket}@{self.account_name}.blob.core.windows.net/{path}"
             ]
+        regex = re.compile(path.replace("*", ".*?").strip("/"))
+        container_client = self.blob_service_client.get_container_client(bucket)
+        blob_list = container_client.list_blobs(
+            name_starts_with=path.strip("/").split("*")[0]
+        )
+        # File path should not be in path (file path must be longer than path)
+        return [
+            f"wasbs://{bucket}@{self.account_name}.blob.core.windows.net/{file}"
+            for file in [x.name for x in blob_list]
+            if re.match(regex, file) and file not in path
+        ]
 
     def _uri_to_bucket_key(self, uri: ParseResult) -> Tuple[str, str]:
         assert uri.hostname == f"{self.account_name}.blob.core.windows.net"
@@ -420,8 +414,7 @@ class LocalFSClient(AbstractStagingClient):
             TemporaryFile object
         """
         url = uri.path
-        file_obj = open(url, "rb")
-        return file_obj
+        return open(url, "rb")
 
     def list_files(self, uri: ParseResult) -> List[str]:
         raise NotImplementedError("list files not implemented for Local file")

@@ -102,13 +102,13 @@ class KafkaOptions:
             Returns a BigQueryOptions object based on the kafka_options protobuf
         """
 
-        kafka_options = cls(
+        return cls(
             bootstrap_servers=kafka_options_proto.bootstrap_servers,
-            message_format=StreamFormat.from_proto(kafka_options_proto.message_format),
+            message_format=StreamFormat.from_proto(
+                kafka_options_proto.message_format
+            ),
             topic=kafka_options_proto.topic,
         )
-
-        return kafka_options
 
     def to_proto(self) -> DataSourceProto.KafkaOptions:
         """
@@ -118,13 +118,11 @@ class KafkaOptions:
             KafkaOptionsProto protobuf
         """
 
-        kafka_options_proto = DataSourceProto.KafkaOptions(
+        return DataSourceProto.KafkaOptions(
             bootstrap_servers=self.bootstrap_servers,
             message_format=self.message_format.to_proto(),
             topic=self.topic,
         )
-
-        return kafka_options_proto
 
 
 class KinesisOptions:
@@ -193,13 +191,13 @@ class KinesisOptions:
             Returns a KinesisOptions object based on the kinesis_options protobuf
         """
 
-        kinesis_options = cls(
-            record_format=StreamFormat.from_proto(kinesis_options_proto.record_format),
+        return cls(
+            record_format=StreamFormat.from_proto(
+                kinesis_options_proto.record_format
+            ),
             region=kinesis_options_proto.region,
             stream_name=kinesis_options_proto.stream_name,
         )
-
-        return kinesis_options
 
     def to_proto(self) -> DataSourceProto.KinesisOptions:
         """
@@ -209,13 +207,11 @@ class KinesisOptions:
             KinesisOptionsProto protobuf
         """
 
-        kinesis_options_proto = DataSourceProto.KinesisOptions(
+        return DataSourceProto.KinesisOptions(
             record_format=self.record_format.to_proto(),
             region=self.region,
             stream_name=self.stream_name,
         )
-
-        return kinesis_options_proto
 
 
 class DataSource(ABC):
@@ -239,15 +235,12 @@ class DataSource(ABC):
         if not isinstance(other, DataSource):
             raise TypeError("Comparisons should only involve DataSource class objects.")
 
-        if (
-            self.event_timestamp_column != other.event_timestamp_column
-            or self.created_timestamp_column != other.created_timestamp_column
-            or self.field_mapping != other.field_mapping
-            or self.date_partition_column != other.date_partition_column
-        ):
-            return False
-
-        return True
+        return (
+            self.event_timestamp_column == other.event_timestamp_column
+            and self.created_timestamp_column == other.created_timestamp_column
+            and self.field_mapping == other.field_mapping
+            and self.date_partition_column == other.date_partition_column
+        )
 
     @property
     def field_mapping(self):
@@ -418,15 +411,13 @@ class KafkaSource(DataSource):
                 "Comparisons should only involve KafkaSource class objects."
             )
 
-        if (
+        return (
             self.kafka_options.bootstrap_servers
-            != other.kafka_options.bootstrap_servers
-            or self.kafka_options.message_format != other.kafka_options.message_format
-            or self.kafka_options.topic != other.kafka_options.topic
-        ):
-            return False
-
-        return True
+            == other.kafka_options.bootstrap_servers
+            and self.kafka_options.message_format
+            == other.kafka_options.message_format
+            and self.kafka_options.topic == other.kafka_options.topic
+        )
 
     @property
     def kafka_options(self):
@@ -530,14 +521,13 @@ class KinesisSource(DataSource):
                 "Comparisons should only involve KinesisSource class objects."
             )
 
-        if (
-            self.kinesis_options.record_format != other.kinesis_options.record_format
-            or self.kinesis_options.region != other.kinesis_options.region
-            or self.kinesis_options.stream_name != other.kinesis_options.stream_name
-        ):
-            return False
-
-        return True
+        return (
+            self.kinesis_options.record_format
+            == other.kinesis_options.record_format
+            and self.kinesis_options.region == other.kinesis_options.region
+            and self.kinesis_options.stream_name
+            == other.kinesis_options.stream_name
+        )
 
     @property
     def kinesis_options(self):

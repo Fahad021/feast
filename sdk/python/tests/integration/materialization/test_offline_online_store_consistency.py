@@ -336,11 +336,10 @@ def check_offline_and_online_features(
             assert abs(response_dict[f"{fv.name}__value"][0] - expected_value) < 1e-6
         else:
             assert response_dict[f"{fv.name}__value"][0] is None
+    elif expected_value:
+        assert abs(response_dict["value"][0] - expected_value) < 1e-6
     else:
-        if expected_value:
-            assert abs(response_dict["value"][0] - expected_value) < 1e-6
-        else:
-            assert response_dict["value"][0] is None
+        assert response_dict["value"][0] is None
 
     # Check offline store
     df = fs.get_historical_features(
@@ -356,11 +355,10 @@ def check_offline_and_online_features(
             assert abs(df.to_dict()[f"{fv.name}__value"][0] - expected_value) < 1e-6
         else:
             assert math.isnan(df.to_dict()[f"{fv.name}__value"][0])
+    elif expected_value:
+        assert abs(df.to_dict()["value"][0] - expected_value) < 1e-6
     else:
-        if expected_value:
-            assert abs(df.to_dict()["value"][0] - expected_value) < 1e-6
-        else:
-            assert math.isnan(df.to_dict()["value"][0])
+        assert math.isnan(df.to_dict()["value"][0])
 
 
 def run_offline_online_store_consistency_test(

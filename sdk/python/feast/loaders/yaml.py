@@ -26,11 +26,7 @@ def yaml_loader(yml, load_single=False):
             )
         return _yaml_to_dict(yaml_strings[0])
 
-    # Return a list of resource dicts
-    resources = []
-    for yaml_string in yaml_strings:
-        resources.append(_yaml_to_dict(yaml_string))
-    return resources
+    return [_yaml_to_dict(yaml_string) for yaml_string in yaml_strings]
 
 
 def _get_yaml_contents(yml: str) -> str:
@@ -47,7 +43,7 @@ def _get_yaml_contents(yml: str) -> str:
     """
     if (
         isinstance(yml, str)
-        and yml.count("\n") == 0
+        and "\n" not in yml
         and (".yaml" in yml.lower() or ".yml" in yml.lower())
     ):
         with open(yml, "r") as f:

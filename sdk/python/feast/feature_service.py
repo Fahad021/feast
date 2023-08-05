@@ -45,7 +45,7 @@ class FeatureService:
         self.name = name
         self.features = []
         for feature in features:
-            if isinstance(feature, FeatureTable) or isinstance(feature, FeatureView):
+            if isinstance(feature, (FeatureTable, FeatureView)):
                 self.features.append(FeatureViewProjection.from_definition(feature))
             elif isinstance(feature, FeatureViewProjection):
                 self.features.append(feature)
@@ -73,10 +73,7 @@ class FeatureService:
         if self.tags != other.tags or self.name != other.name:
             return False
 
-        if sorted(self.features) != sorted(other.features):
-            return False
-
-        return True
+        return sorted(self.features) == sorted(other.features)
 
     @staticmethod
     def from_proto(feature_service_proto: FeatureServiceProto):
@@ -108,9 +105,7 @@ class FeatureService:
         spec = FeatureServiceSpec()
         spec.name = self.name
         for definition in self.features:
-            if isinstance(definition, FeatureTable) or isinstance(
-                definition, FeatureView
-            ):
+            if isinstance(definition, (FeatureTable, FeatureView)):
                 feature_ref = FeatureViewProjection(
                     definition.name, definition.features
                 )
@@ -122,8 +117,7 @@ class FeatureService:
         if self.tags:
             spec.tags.update(self.tags)
 
-        feature_service_proto = FeatureServiceProto(spec=spec, meta=meta)
-        return feature_service_proto
+        return FeatureServiceProto(spec=spec, meta=meta)
 
     def validate(self):
         pass

@@ -52,7 +52,7 @@ def test_usage_on_v09(mocker):
     test_client.apply(entity)
 
     os.environ.clear()
-    os.environ.update(old_environ)
+    os.environ |= old_environ
 
     ensure_bigquery_usage_id_with_retry(test_usage_id)
 
@@ -80,7 +80,7 @@ def test_usage_off_v09(mocker):
     test_client.apply(entity)
 
     os.environ.clear()
-    os.environ.update(old_environ)
+    os.environ |= old_environ
     sleep(30)
     rows = read_bigquery_usage_id(test_usage_id)
     assert rows.total_rows == 0
@@ -114,7 +114,7 @@ def test_usage_on():
         test_feature_store.apply([entity])
 
         os.environ.clear()
-        os.environ.update(old_environ)
+        os.environ |= old_environ
         ensure_bigquery_usage_id_with_retry(test_usage_id)
 
 
@@ -164,7 +164,7 @@ def test_exception_usage_on():
         pass
 
     os.environ.clear()
-    os.environ.update(old_environ)
+    os.environ |= old_environ
     ensure_bigquery_usage_id_with_retry(test_usage_id)
 
 
@@ -181,7 +181,7 @@ def test_exception_usage_off():
         pass
 
     os.environ.clear()
-    os.environ.update(old_environ)
+    os.environ |= old_environ
     sleep(30)
     rows = read_bigquery_usage_id(test_usage_id)
     assert rows.total_rows == 0

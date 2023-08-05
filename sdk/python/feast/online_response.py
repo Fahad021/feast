@@ -54,10 +54,10 @@ class OnlineResponse:
         Converts GetOnlineFeaturesResponse features into a dictionary form.
         """
         fields = [k for row in self.field_values for k, _ in row.statuses.items()]
-        features_dict: Dict[str, List[Any]] = {k: list() for k in fields}
+        features_dict: Dict[str, List[Any]] = {k: [] for k in fields}
 
         for row in self.field_values:
-            for feature in features_dict.keys():
+            for feature in features_dict:
                 native_type_value = feast_value_type_to_python_type(row.fields[feature])
                 features_dict[feature].append(native_type_value)
 
@@ -85,7 +85,7 @@ def _infer_online_entity_rows(
 
     entity_rows_dicts = cast(List[Dict[str, Any]], entity_rows)
     entity_row_list = []
-    entity_type_map = dict()
+    entity_type_map = {}
 
     for entity in entity_rows_dicts:
         fields = {}
@@ -99,11 +99,10 @@ def _infer_online_entity_rows(
 
                 if key not in entity_type_map:
                     entity_type_map[key] = current_dtype
-                else:
-                    if current_dtype != entity_type_map[key]:
-                        raise TypeError(
-                            f"Input entity {key} has mixed types, {current_dtype} and {entity_type_map[key]}. That is not allowed. "
-                        )
+                elif current_dtype != entity_type_map[key]:
+                    raise TypeError(
+                        f"Input entity {key} has mixed types, {current_dtype} and {entity_type_map[key]}. That is not allowed. "
+                    )
                 proto_value = _python_value_to_proto_value(current_dtype, value)
             fields[key] = proto_value
         entity_row_list.append(GetOnlineFeaturesRequestV2.EntityRow(fields=fields))

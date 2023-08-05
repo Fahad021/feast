@@ -111,7 +111,7 @@ class RepoConfig(FeastBaseModel):
 
         # Set empty online_store config if it isn't set explicitly
         if "online_store" not in values:
-            values["online_store"] = dict()
+            values["online_store"] = {}
 
         # Skip if we aren't creating the configuration from a dict
         if not isinstance(values["online_store"], Dict):
@@ -148,7 +148,7 @@ class RepoConfig(FeastBaseModel):
     def _validate_offline_store_config(cls, values):
         # Set empty offline_store config if it isn't set explicitly
         if "offline_store" not in values:
-            values["offline_store"] = dict()
+            values["offline_store"] = {}
 
         # Skip if we aren't creating the configuration from a dict
         if not isinstance(values["offline_store"], Dict):
@@ -159,13 +159,14 @@ class RepoConfig(FeastBaseModel):
 
         # Set the default type
         if "type" not in values["offline_store"]:
-            if values["provider"] == "local":
+            if (
+                values["provider"] == "local"
+                or values["provider"] != "gcp"
+                and values["provider"] == "aws"
+            ):
                 values["offline_store"]["type"] = "file"
             elif values["provider"] == "gcp":
                 values["offline_store"]["type"] = "bigquery"
-            elif values["provider"] == "aws":
-                values["offline_store"]["type"] = "file"
-
         offline_store_type = values["offline_store"]["type"]
 
         # Validate the dict to ensure one of the union types match

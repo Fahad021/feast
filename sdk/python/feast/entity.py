@@ -44,17 +44,9 @@ class Entity:
         self._name = name
         self._description = description
         self._value_type = value_type
-        if join_key:
-            self._join_key = join_key
-        else:
-            self._join_key = name
-
+        self._join_key = join_key if join_key else name
         self._labels: MutableMapping[str, str]
-        if labels is None:
-            self._labels = dict()
-        else:
-            self._labels = labels
-
+        self._labels = {} if labels is None else labels
         self._created_timestamp: Optional[Timestamp] = None
         self._last_updated_timestamp: Optional[Timestamp] = None
 
@@ -62,16 +54,13 @@ class Entity:
         if not isinstance(other, Entity):
             raise TypeError("Comparisons should only involve Entity class objects.")
 
-        if (
-            self.labels != other.labels
-            or self.name != other.name
-            or self.description != other.description
-            or self.value_type != other.value_type
-            or self.join_key != other.join_key
-        ):
-            return False
-
-        return True
+        return (
+            self.labels == other.labels
+            and self.name == other.name
+            and self.description == other.description
+            and self.value_type == other.value_type
+            and self.join_key == other.join_key
+        )
 
     def __str__(self):
         return str(MessageToJson(self.to_proto()))
@@ -287,15 +276,13 @@ class Entity:
             EntitySpecV2 protobuf
         """
 
-        spec = EntitySpecProto(
+        return EntitySpecProto(
             name=self.name,
             description=self.description,
             value_type=self.value_type.value,
             labels=self.labels,
             join_key=self.join_key,
         )
-
-        return spec
 
     def _update_from_entity(self, entity):
         """

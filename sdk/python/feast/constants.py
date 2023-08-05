@@ -28,10 +28,7 @@ class Option:
         self._default = default
 
     def __get__(self, instance, owner):
-        if instance is None:
-            return self._name.lower()
-
-        return self._default
+        return self._name.lower() if instance is None else self._default
 
 
 class ConfigMeta(type):

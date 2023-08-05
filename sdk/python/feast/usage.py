@@ -94,8 +94,6 @@ class Usage:
             except Exception as e:
                 if self._is_test:
                     raise e
-                else:
-                    pass
             return
 
     def log_exception(self, error_type: str, traceback: List[Tuple[str, int, str]]):
@@ -114,8 +112,6 @@ class Usage:
             except Exception as e:
                 if self._is_test:
                     raise e
-                else:
-                    pass
             return
 
 

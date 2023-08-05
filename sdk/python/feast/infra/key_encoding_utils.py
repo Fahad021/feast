@@ -35,14 +35,15 @@ def serialize_entity_key(entity_key: EntityKeyProto) -> bytes:
 
     output: List[bytes] = []
     for k in sorted_keys:
-        output.append(struct.pack("<I", ValueType.STRING))
-        output.append(k.encode("utf8"))
+        output.extend((struct.pack("<I", ValueType.STRING), k.encode("utf8")))
     for v in sorted_values:
         val_bytes, value_type = _serialize_val(v.WhichOneof("val"), v)
 
-        output.append(struct.pack("<I", value_type))
-
-        output.append(struct.pack("<I", len(val_bytes)))
-        output.append(val_bytes)
-
+        output.extend(
+            (
+                struct.pack("<I", value_type),
+                struct.pack("<I", len(val_bytes)),
+                val_bytes,
+            )
+        )
     return b"".join(output)

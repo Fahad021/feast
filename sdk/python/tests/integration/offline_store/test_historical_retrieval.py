@@ -81,7 +81,7 @@ def stage_driver_hourly_stats_bigquery_source(df, table_id):
 
 
 def create_driver_hourly_stats_feature_view(source):
-    driver_stats_feature_view = FeatureView(
+    return FeatureView(
         name="driver_stats",
         entities=["driver"],
         features=[
@@ -92,7 +92,6 @@ def create_driver_hourly_stats_feature_view(source):
         input=source,
         ttl=timedelta(hours=2),
     )
-    return driver_stats_feature_view
 
 
 def stage_customer_daily_profile_parquet_source(directory, df):
@@ -118,7 +117,7 @@ def stage_customer_daily_profile_bigquery_source(df, table_id):
 
 
 def create_customer_daily_profile_feature_view(source):
-    customer_profile_feature_view = FeatureView(
+    return FeatureView(
         name="customer_profile",
         entities=["customer_id"],
         features=[
@@ -130,7 +129,6 @@ def create_customer_daily_profile_feature_view(source):
         input=source,
         ttl=timedelta(days=2),
     )
-    return customer_profile_feature_view
 
 
 # Converts the given column of the pandas records to UTC timestamps
@@ -268,11 +266,7 @@ class BigQueryDataSet:
         client.delete_dataset(dataset_id, delete_contents=True, not_found_ok=True)
         print(f"Deleted dataset '{dataset_id}'")
         if exc_type:
-            print(
-                "***Logging exception {}***".format(
-                    (exc_type, exc_value, exc_traceback)
-                )
-            )
+            print(f"***Logging exception {(exc_type, exc_value, exc_traceback)}***")
 
 
 @pytest.mark.parametrize(
@@ -419,7 +413,7 @@ def test_historical_features_from_bigquery_sources(
         f"test_hist_retrieval_{int(time.time_ns())}_{random.randint(1000, 9999)}"
     )
 
-    with BigQueryDataSet(bigquery_dataset), TemporaryDirectory() as temp_dir:
+    with (BigQueryDataSet(bigquery_dataset), TemporaryDirectory() as temp_dir):
         gcp_project = bigquery.Client().project
 
         # Orders Query
@@ -533,11 +527,7 @@ def test_historical_features_from_bigquery_sources(
         actual_df_from_sql_entities = job_from_sql.to_df()
         end_time = datetime.utcnow()
         with capsys.disabled():
-            print(
-                str(
-                    f"\nTime to execute job_from_sql.to_df() = '{(end_time - start_time)}'"
-                )
-            )
+            print(f"\nTime to execute job_from_sql.to_df() = '{end_time - start_time}'")
 
         assert sorted(expected_df.columns) == sorted(
             actual_df_from_sql_entities.columns
@@ -622,11 +612,7 @@ def test_historical_features_from_bigquery_sources(
         actual_df_from_df_entities = job_from_df.to_df()
         end_time = datetime.utcnow()
         with capsys.disabled():
-            print(
-                str(
-                    f"Time to execute job_from_df.to_df() = '{(end_time - start_time)}'\n"
-                )
-            )
+            print(f"Time to execute job_from_df.to_df() = '{end_time - start_time}'\n")
 
         assert sorted(expected_df.columns) == sorted(actual_df_from_df_entities.columns)
         assert_frame_equal(
@@ -734,7 +720,7 @@ def test_historical_features_from_redshift_sources(
         customer_df,
     )
 
-    with orders_context, driver_context, customer_context, TemporaryDirectory() as temp_dir:
+    with (orders_context, driver_context, customer_context, TemporaryDirectory() as temp_dir):
         driver_source = RedshiftSource(
             table=driver_table_name,
             event_timestamp_column="datetime",
@@ -812,11 +798,7 @@ def test_historical_features_from_redshift_sources(
         actual_df_from_sql_entities = job_from_sql.to_df()
         end_time = datetime.utcnow()
         with capsys.disabled():
-            print(
-                str(
-                    f"\nTime to execute job_from_sql.to_df() = '{(end_time - start_time)}'"
-                )
-            )
+            print(f"\nTime to execute job_from_sql.to_df() = '{end_time - start_time}'")
 
         assert sorted(expected_df.columns) == sorted(
             actual_df_from_sql_entities.columns
@@ -898,11 +880,7 @@ def test_historical_features_from_redshift_sources(
         actual_df_from_df_entities = job_from_df.to_df()
         end_time = datetime.utcnow()
         with capsys.disabled():
-            print(
-                str(
-                    f"Time to execute job_from_df.to_df() = '{(end_time - start_time)}'\n"
-                )
-            )
+            print(f"Time to execute job_from_df.to_df() = '{end_time - start_time}'\n")
 
         assert sorted(expected_df.columns) == sorted(actual_df_from_df_entities.columns)
         assert_frame_equal(

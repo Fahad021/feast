@@ -63,9 +63,7 @@ class RedshiftOfflineStore(OfflineStore):
 
         partition_by_join_key_string = ", ".join(join_key_columns)
         if partition_by_join_key_string != "":
-            partition_by_join_key_string = (
-                "PARTITION BY " + partition_by_join_key_string
-            )
+            partition_by_join_key_string = f"PARTITION BY {partition_by_join_key_string}"
         timestamp_columns = [event_timestamp_column]
         if created_timestamp_column:
             timestamp_columns.append(created_timestamp_column)

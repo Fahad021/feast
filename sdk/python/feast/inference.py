@@ -33,7 +33,7 @@ def update_entities_with_inferred_types_from_feature_views(
                 extracted_entity_name_type_pairs = list(
                     filter(lambda tup: tup[0] == entity_name, col_names_and_types)
                 )
-                if len(extracted_entity_name_type_pairs) == 0:
+                if not extracted_entity_name_type_pairs:
                     # Doesn't mention inference error because would also be an error without inferencing
                     raise ValueError(
                         f"""No column in the input source for the {view.name} feature view matches
@@ -46,9 +46,10 @@ def update_entities_with_inferred_types_from_feature_views(
                 )
 
                 if (
-                    entity.value_type != ValueType.UNKNOWN
-                    and entity.value_type != inferred_value_type
-                ) or (len(extracted_entity_name_type_pairs) > 1):
+                    entity.value_type
+                    not in [ValueType.UNKNOWN, inferred_value_type]
+                    or len(extracted_entity_name_type_pairs) > 1
+                ):
                     raise RegistryInferenceFailure(
                         "Entity",
                         f"""Entity value_type inference failed for {entity_name} entity.
@@ -86,9 +87,7 @@ def update_data_sources_with_inferred_event_timestamp_col(
                     """,
                 )
             #  for informing the type checker
-            assert isinstance(data_source, FileSource) or isinstance(
-                data_source, BigQuerySource
-            )
+            assert isinstance(data_source, (FileSource, BigQuerySource))
 
             # loop through table columns to find singular match
             event_timestamp_column, matched_flag = None, False
