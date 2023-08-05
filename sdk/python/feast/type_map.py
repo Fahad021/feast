@@ -50,9 +50,9 @@ def feast_value_type_to_python_type(field_value_proto: ProtoValue) -> Any:
             return int(v)
         if k == "bytesVal":
             return bytes(v)
-        if (k == "int64ListVal") or (k == "int32ListVal"):
+        if k in ["int64ListVal", "int32ListVal"]:
             return [int(item) for item in v["val"]]
-        if (k == "floatListVal") or (k == "doubleListVal"):
+        if k in ["floatListVal", "doubleListVal"]:
             return [float(item) for item in v["val"]]
         if k == "stringListVal":
             return [str(item) for item in v["val"]]
@@ -113,46 +113,42 @@ def python_type_to_feast_value_type(
         return type_map[type_name]
 
     if type_name == "ndarray" or isinstance(value, list):
-        if recurse:
-
-            # Convert to list type
-            list_items = pd.core.series.Series(value)
-
-            # This is the final type which we infer from the list
-            common_item_value_type = None
-            for item in list_items:
-                if isinstance(item, ProtoValue):
-                    current_item_value_type = _proto_str_to_value_type(
-                        str(item.WhichOneof("val"))
-                    )
-                else:
-                    # Get the type from the current item, only one level deep
-                    current_item_value_type = python_type_to_feast_value_type(
-                        name=name, value=item, recurse=False
-                    )
-                # Validate whether the type stays consistent
-                if (
-                    common_item_value_type
-                    and not common_item_value_type == current_item_value_type
-                ):
-                    raise ValueError(
-                        f"List value type for field {name} is inconsistent. "
-                        f"{common_item_value_type} different from "
-                        f"{current_item_value_type}."
-                    )
-                common_item_value_type = current_item_value_type
-            if common_item_value_type is None:
-                raise ValueError(
-                    f"field {name} cannot have null values for type inference."
-                )
-            return ValueType[common_item_value_type.name + "_LIST"]
-        else:
+        if not recurse:
             raise ValueError(
                 f"Value type for field {name} is {value.dtype.__str__()} but "
                 f"recursion is not allowed. Array types can only be one level "
                 f"deep."
             )
 
+        # Convert to list type
+        list_items = pd.core.series.Series(value)
+
+        # This is the final type which we infer from the list
+        common_item_value_type = None
+        for item in list_items:
+            current_item_value_type = (
+                _proto_str_to_value_type(str(item.WhichOneof("val")))
+                if isinstance(item, ProtoValue)
+                else python_type_to_feast_value_type(
+                    name=name, value=item, recurse=False
+                )
+            )
+                # Validate whether the type stays consistent
+            if (
+                common_item_value_type
+                and common_item_value_type != current_item_value_type
+            ):
+                raise ValueError(
+                    f"List value type for field {name} is inconsistent. "
+                    f"{common_item_value_type} different from "
+                    f"{current_item_value_type}."
+                )
+            common_item_value_type = current_item_value_type
+        if common_item_value_type is None:
+            raise ValueError(
+                f"field {name} cannot have null values for type inference."
+            )
+        return ValueType[common_item_value_type.name + "_LIST"]
     return type_map[value.dtype.__str__()]
 
 
@@ -270,29 +266,27 @@ def _python_value_to_proto_value(feast_value_type, value) -> ProtoValue:
                 )
             )
 
-    # Handle scalar types below
-    else:
-        if pd.isnull(value):
-            return ProtoValue()
-        elif feast_value_type == ValueType.INT32:
-            return ProtoValue(int32_val=int(value))
-        elif feast_value_type == ValueType.INT64:
-            return ProtoValue(int64_val=int(value))
-        elif feast_value_type == ValueType.UNIX_TIMESTAMP:
-            return ProtoValue(int64_val=int(value))
-        elif feast_value_type == ValueType.FLOAT:
-            return ProtoValue(float_val=float(value))
-        elif feast_value_type == ValueType.DOUBLE:
-            assert type(value) is float or np.float64
-            return ProtoValue(double_val=value)
-        elif feast_value_type == ValueType.STRING:
-            return ProtoValue(string_val=str(value))
-        elif feast_value_type == ValueType.BYTES:
-            assert type(value) is bytes
-            return ProtoValue(bytes_val=value)
-        elif feast_value_type == ValueType.BOOL:
-            assert type(value) is bool
-            return ProtoValue(bool_val=value)
+    elif pd.isnull(value):
+        return ProtoValue()
+    elif feast_value_type == ValueType.INT32:
+        return ProtoValue(int32_val=int(value))
+    elif feast_value_type == ValueType.INT64:
+        return ProtoValue(int64_val=int(value))
+    elif feast_value_type == ValueType.UNIX_TIMESTAMP:
+        return ProtoValue(int64_val=int(value))
+    elif feast_value_type == ValueType.FLOAT:
+        return ProtoValue(float_val=float(value))
+    elif feast_value_type == ValueType.DOUBLE:
+        assert type(value) is float or np.float64
+        return ProtoValue(double_val=value)
+    elif feast_value_type == ValueType.STRING:
+        return ProtoValue(string_val=str(value))
+    elif feast_value_type == ValueType.BYTES:
+        assert type(value) is bytes
+        return ProtoValue(bytes_val=value)
+    elif feast_value_type == ValueType.BOOL:
+        assert type(value) is bool
+        return ProtoValue(bool_val=value)
 
     raise Exception(f"Unsupported data type: ${str(type(value))}")
 
@@ -407,11 +401,7 @@ def pa_to_redshift_value_type(pa_type_as_str: str) -> str:
     # Redshift type: https://docs.aws.amazon.com/redshift/latest/dg/c_Supported_data_types.html
     pa_type_as_str = pa_type_as_str.lower()
     if pa_type_as_str.startswith("timestamp"):
-        if "tz=" in pa_type_as_str:
-            return "timestamptz"
-        else:
-            return "timestamp"
-
+        return "timestamptz" if "tz=" in pa_type_as_str else "timestamp"
     if pa_type_as_str.startswith("date"):
         return "date"
 

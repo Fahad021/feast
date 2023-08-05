@@ -96,10 +96,7 @@ class RedshiftSource(DataSource):
 
     def get_table_query_string(self) -> str:
         """Returns a string that can directly be used to reference this table in SQL"""
-        if self.table:
-            return f'"{self.table}"'
-        else:
-            return f"({self.query})"
+        return f'"{self.table}"' if self.table else f"({self.query})"
 
     @staticmethod
     def source_datatype_to_feast_value_type() -> Callable[[str], ValueType]:
@@ -199,11 +196,10 @@ class RedshiftOptions:
             Returns a RedshiftOptions object based on the redshift_options protobuf
         """
 
-        redshift_options = cls(
-            table=redshift_options_proto.table, query=redshift_options_proto.query,
+        return cls(
+            table=redshift_options_proto.table,
+            query=redshift_options_proto.query,
         )
-
-        return redshift_options
 
     def to_proto(self) -> DataSourceProto.RedshiftOptions:
         """
@@ -213,8 +209,7 @@ class RedshiftOptions:
             RedshiftOptionsProto protobuf
         """
 
-        redshift_options_proto = DataSourceProto.RedshiftOptions(
-            table=self.table, query=self.query,
+        return DataSourceProto.RedshiftOptions(
+            table=self.table,
+            query=self.query,
         )
-
-        return redshift_options_proto

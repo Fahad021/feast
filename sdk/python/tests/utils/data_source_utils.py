@@ -12,12 +12,11 @@ def prep_file_source(df, event_timestamp_column=None) -> FileSource:
     with tempfile.NamedTemporaryFile(suffix=".parquet") as f:
         f.close()
         df.to_parquet(f.name)
-        file_source = FileSource(
+        yield FileSource(
             file_format=ParquetFormat(),
             path=f.name,
             event_timestamp_column=event_timestamp_column,
         )
-        yield file_source
 
 
 def simple_bq_source_using_table_ref_arg(

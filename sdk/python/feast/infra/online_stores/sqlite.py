@@ -58,11 +58,12 @@ class SqliteOnlineStore(OnlineStore):
             or config.online_store.type.endswith("SqliteOnlineStore")
         )
 
-        if config.repo_path and not Path(config.online_store.path).is_absolute():
-            db_path = str(config.repo_path / config.online_store.path)
-        else:
-            db_path = config.online_store.path
-        return db_path
+        return (
+            str(config.repo_path / config.online_store.path)
+            if config.repo_path
+            and not Path(config.online_store.path).is_absolute()
+            else config.online_store.path
+        )
 
     def _get_conn(self, config: RepoConfig):
         if not self._conn:
@@ -134,7 +135,6 @@ class SqliteOnlineStore(OnlineStore):
         entity_keys: List[EntityKeyProto],
         requested_features: Optional[List[str]] = None,
     ) -> List[Tuple[Optional[datetime], Optional[Dict[str, ValueProto]]]]:
-        pass
         conn = self._get_conn(config)
         cur = conn.cursor()
 

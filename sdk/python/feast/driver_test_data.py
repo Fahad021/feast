@@ -47,7 +47,7 @@ def create_orders_df(
     |      103 |      5010 |        1001 |                1 | 2021-03-14 03:05:59 |
     """
     df = pd.DataFrame()
-    df["order_id"] = [order_id for order_id in range(100, 100 + order_count)]
+    df["order_id"] = list(range(100, 100 + order_count))
     df["driver_id"] = np.random.choice(drivers, order_count)
     df["customer_id"] = np.random.choice(customers, order_count)
     df["order_is_success"] = np.random.randint(0, 2, size=order_count).astype(np.int32)
@@ -58,8 +58,8 @@ def create_orders_df(
                 pd.Timestamp(dt, unit="ms", tz="UTC").round("ms"),
                 EventTimestampType(3),
             )
-            for idx, dt in enumerate(
-                pd.date_range(start=start_date, end=end_date, periods=order_count)
+            for dt in pd.date_range(
+                start=start_date, end=end_date, periods=order_count
             )
         ]
         df.sort_values(

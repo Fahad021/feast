@@ -219,14 +219,13 @@ class FeatureStore:
             raise ValueError("No features specified for retrieval")
 
         _feature_refs: List[str]
-        if isinstance(_features, FeatureService):
-            # Get the latest value of the feature service, in case the object passed in has been updated underneath us.
-            _feature_refs = _get_feature_refs_from_feature_services(
+        return (
+            _get_feature_refs_from_feature_services(
                 self.get_feature_service(_features.name)
             )
-        else:
-            _feature_refs = _features
-        return _feature_refs
+            if isinstance(_features, FeatureService)
+            else _features
+        )
 
     @log_exceptions_and_usage
     def apply(
@@ -381,15 +380,16 @@ class FeatureStore:
         print(f"_feature_refs: {_feature_refs}")
 
         all_feature_views = self._registry.list_feature_views(project=self.project)
-        feature_views = list(
-            view for view, _ in _group_feature_refs(_feature_refs, all_feature_views)
-        )
+        feature_views = [
+            view
+            for view, _ in _group_feature_refs(_feature_refs, all_feature_views)
+        ]
 
         _validate_feature_refs(_feature_refs, full_feature_names)
 
         provider = self._get_provider()
 
-        job = provider.get_historical_features(
+        return provider.get_historical_features(
             self.config,
             feature_views,
             _feature_refs,
@@ -398,8 +398,6 @@ class FeatureStore:
             self.project,
             full_feature_names,
         )
-
-        return job
 
     @log_exceptions_and_usage
     def materialize_incremental(
@@ -607,10 +605,9 @@ class FeatureStore:
 
         provider = self._get_provider()
         entities = self.list_entities(allow_cache=True)
-        entity_name_to_join_key_map = {}
-        for entity in entities:
-            entity_name_to_join_key_map[entity.name] = entity.join_key
-
+        entity_name_to_join_key_map = {
+            entity.name: entity.join_key for entity in entities
+        }
         join_key_rows = []
         for row in entity_rows:
             join_key_row = {}
@@ -717,7 +714,7 @@ def _validate_feature_refs(feature_refs: List[str], full_feature_names: bool = F
                 [ref for ref in feature_refs if ref.endswith(":" + feature_name)]
             )
 
-    if len(collided_feature_refs) > 0:
+    if collided_feature_refs:
         raise FeatureNameCollisionError(collided_feature_refs, full_feature_names)
 
 
@@ -745,10 +742,10 @@ def _group_feature_refs(
                 [f.name for f in projected_features]
             )
 
-    result = []
-    for view_name, feature_names in views_features.items():
-        result.append((view_index[view_name], feature_names))
-    return result
+    return [
+        (view_index[view_name], feature_names)
+        for view_name, feature_names in views_features.items()
+    ]
 
 
 def _get_feature_refs_from_feature_services(

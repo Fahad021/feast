@@ -34,7 +34,7 @@ def test_entity_class_contains_labels():
 
 def test_entity_without_labels_empty_dict():
     entity = Entity("my-entity", description="My entity", value_type=ValueType.STRING)
-    assert entity.labels == dict()
+    assert entity.labels == {}
     assert len(entity.labels) == 0
 
 

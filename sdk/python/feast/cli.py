@@ -68,7 +68,6 @@ def cli(ctx: click.Context, chdir: str):
     """
     ctx.ensure_object(dict)
     ctx.obj["CHDIR"] = Path.cwd() if chdir is None else Path(chdir).absolute()
-    pass
 
 
 @cli.command()
@@ -120,10 +119,10 @@ def entity_list(ctx: click.Context):
     repo = ctx.obj["CHDIR"]
     cli_check_repo(repo)
     store = FeatureStore(repo_path=str(repo))
-    table = []
-    for entity in store.list_entities():
-        table.append([entity.name, entity.description, entity.value_type])
-
+    table = [
+        [entity.name, entity.description, entity.value_type]
+        for entity in store.list_entities()
+    ]
     from tabulate import tabulate
 
     print(tabulate(table, headers=["NAME", "DESCRIPTION", "TYPE"], tablefmt="plain"))
@@ -227,10 +226,10 @@ def feature_view_list(ctx: click.Context):
     repo = ctx.obj["CHDIR"]
     cli_check_repo(repo)
     store = FeatureStore(repo_path=str(repo))
-    table = []
-    for feature_view in store.list_feature_views():
-        table.append([feature_view.name, feature_view.entities])
-
+    table = [
+        [feature_view.name, feature_view.entities]
+        for feature_view in store.list_feature_views()
+    ]
     from tabulate import tabulate
 
     print(tabulate(table, headers=["NAME", "ENTITIES"], tablefmt="plain"))
@@ -253,7 +252,7 @@ def apply_total_command(ctx: click.Context, skip_source_validation: bool):
     try:
         apply_total(repo_config, repo, skip_source_validation)
     except FeastProviderLoginError as e:
-        print(str(e))
+        print(e)
 
 
 @cli.command("teardown", cls=NoOptionDefaultFormat)

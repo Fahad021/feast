@@ -55,11 +55,7 @@ class FeatureTable:
         self._stream_source = stream_source
 
         self._labels: MutableMapping[str, str]
-        if labels is None:
-            self._labels = dict()
-        else:
-            self._labels = labels
-
+        self._labels = {} if labels is None else labels
         self._max_age = max_age
         self._created_timestamp: Optional[Timestamp] = None
         self._last_updated_timestamp: Optional[Timestamp] = None
@@ -86,10 +82,7 @@ class FeatureTable:
             return False
         if self.batch_source != other.batch_source:
             return False
-        if self.stream_source != other.stream_source:
-            return False
-
-        return True
+        return self.stream_source == other.stream_source
 
     @property
     def name(self):
@@ -270,7 +263,7 @@ class FeatureTable:
 
         feature_table = cls(
             name=feature_table_proto.spec.name,
-            entities=[entity for entity in feature_table_proto.spec.entities],
+            entities=list(feature_table_proto.spec.entities),
             features=[
                 Feature(
                     name=feature.name,
@@ -286,7 +279,9 @@ class FeatureTable:
                 and feature_table_proto.spec.max_age.nanos == 0
                 else feature_table_proto.spec.max_age
             ),
-            batch_source=DataSource.from_proto(feature_table_proto.spec.batch_source),
+            batch_source=DataSource.from_proto(
+                feature_table_proto.spec.batch_source
+            ),
             stream_source=(
                 None
                 if not feature_table_proto.spec.stream_source.ByteSize()
@@ -343,7 +338,7 @@ class FeatureTable:
             FeatureTableSpecProto protobuf
         """
 
-        spec = FeatureTableSpecProto(
+        return FeatureTableSpecProto(
             name=self.name,
             entities=self.entities,
             features=[
@@ -363,8 +358,6 @@ class FeatureTable:
                 else self.stream_source
             ),
         )
-
-        return spec
 
     def to_dict(self) -> Dict:
         """

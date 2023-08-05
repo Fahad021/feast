@@ -35,10 +35,7 @@ def _check_field_mappings(
             f"Provided data source does not contain timestamp column {feature_table_timestamp_column} in columns {column_names}"
         )
 
-    specified_field_mappings = list()
-    for k, v in feature_table_field_mappings.items():
-        specified_field_mappings.append(v)
-
+    specified_field_mappings = list(feature_table_field_mappings.values())
     is_valid = all(col_name in column_names for col_name in specified_field_mappings)
 
     if not is_valid:

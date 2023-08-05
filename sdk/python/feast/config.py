@@ -68,11 +68,11 @@ def _get_feast_env_vars():
 
     Returns: Dict of Feast environmental variables (stripped of prefix)
     """
-    feast_env_vars = {}
-    for key in os.environ.keys():
-        if key.upper().startswith(CONFIG_FEAST_ENV_VAR_PREFIX):
-            feast_env_vars[key[len(CONFIG_FEAST_ENV_VAR_PREFIX) :]] = os.environ[key]
-    return feast_env_vars
+    return {
+        key[len(CONFIG_FEAST_ENV_VAR_PREFIX) :]: os.environ[key]
+        for key in os.environ
+        if key.upper().startswith(CONFIG_FEAST_ENV_VAR_PREFIX)
+    }
 
 
 class Config:
@@ -218,5 +218,5 @@ class Config:
         for section_name in self._config.sections():
             result += "\n[" + section_name + "]\n"
             for name, value in self._config.items(section_name):
-                result += name + " = " + value + "\n"
+                result += f"{name} = {value}" + "\n"
         return result

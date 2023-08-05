@@ -66,7 +66,7 @@ class Registry:
             self._registry_store: RegistryStore = GCSRegistryStore(registry_path)
         elif uri.scheme == "s3":
             self._registry_store = S3RegistryStore(registry_path)
-        elif uri.scheme == "file" or uri.scheme == "":
+        elif uri.scheme in ["file", ""]:
             self._registry_store = LocalRegistryStore(
                 repo_path=repo_path, registry_path_string=registry_path
             )
@@ -124,11 +124,11 @@ class Registry:
             List of entities
         """
         registry_proto = self._get_registry_proto(allow_cache=allow_cache)
-        entities = []
-        for entity_proto in registry_proto.entities:
-            if entity_proto.spec.project == project:
-                entities.append(Entity.from_proto(entity_proto))
-        return entities
+        return [
+            Entity.from_proto(entity_proto)
+            for entity_proto in registry_proto.entities
+            if entity_proto.spec.project == project
+        ]
 
     def apply_feature_service(
         self, feature_service: FeatureService, project: str, commit: bool = True
@@ -171,13 +171,11 @@ class Registry:
         """
 
         registry = self._get_registry_proto(allow_cache=allow_cache)
-        feature_services = []
-        for feature_service_proto in registry.feature_services:
-            if feature_service_proto.spec.project == project:
-                feature_services.append(
-                    FeatureService.from_proto(feature_service_proto)
-                )
-        return feature_services
+        return [
+            FeatureService.from_proto(feature_service_proto)
+            for feature_service_proto in registry.feature_services
+            if feature_service_proto.spec.project == project
+        ]
 
     def get_feature_service(
         self, name: str, project: str, allow_cache: bool = False
@@ -278,9 +276,8 @@ class Registry:
             ):
                 if FeatureView.from_proto(existing_feature_view_proto) == feature_view:
                     return
-                else:
-                    del self.cached_registry_proto.feature_views[idx]
-                    break
+                del self.cached_registry_proto.feature_views[idx]
+                break
 
         self.cached_registry_proto.feature_views.append(feature_view_proto)
         if commit:
@@ -341,11 +338,11 @@ class Registry:
             List of feature tables
         """
         registry_proto = self._get_registry_proto()
-        feature_tables = []
-        for feature_table_proto in registry_proto.feature_tables:
-            if feature_table_proto.spec.project == project:
-                feature_tables.append(FeatureTable.from_proto(feature_table_proto))
-        return feature_tables
+        return [
+            FeatureTable.from_proto(feature_table_proto)
+            for feature_table_proto in registry_proto.feature_tables
+            if feature_table_proto.spec.project == project
+        ]
 
     def list_feature_views(
         self, project: str, allow_cache: bool = False
@@ -361,11 +358,11 @@ class Registry:
             List of feature views
         """
         registry_proto = self._get_registry_proto(allow_cache=allow_cache)
-        feature_views = []
-        for feature_view_proto in registry_proto.feature_views:
-            if feature_view_proto.spec.project == project:
-                feature_views.append(FeatureView.from_proto(feature_view_proto))
-        return feature_views
+        return [
+            FeatureView.from_proto(feature_view_proto)
+            for feature_view_proto in registry_proto.feature_views
+            if feature_view_proto.spec.project == project
+        ]
 
     def get_feature_table(self, name: str, project: str) -> FeatureTable:
         """

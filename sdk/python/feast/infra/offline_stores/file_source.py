@@ -181,11 +181,10 @@ class FileOptions:
         Returns:
             Returns a FileOptions object based on the file_options protobuf
         """
-        file_options = cls(
+        return cls(
             file_format=FileFormat.from_proto(file_options_proto.file_format),
             file_url=file_options_proto.file_url,
         )
-        return file_options
 
     def to_proto(self) -> DataSourceProto.FileOptions:
         """
@@ -195,11 +194,9 @@ class FileOptions:
             FileOptionsProto protobuf
         """
 
-        file_options_proto = DataSourceProto.FileOptions(
+        return DataSourceProto.FileOptions(
             file_format=(
                 None if self.file_format is None else self.file_format.to_proto()
             ),
             file_url=self.file_url,
         )
-
-        return file_options_proto

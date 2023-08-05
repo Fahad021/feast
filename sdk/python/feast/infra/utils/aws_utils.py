@@ -258,9 +258,9 @@ def download_s3_directory(s3_resource, bucket: str, key: str, local_dir: str):
     """ Download the S3 directory to a local disk """
     bucket_obj = s3_resource.Bucket(bucket)
     if key != "" and not key.endswith("/"):
-        key = key + "/"
+        key += "/"
     for obj in bucket_obj.objects.filter(Prefix=key):
-        local_file_path = local_dir + "/" + obj.key[len(key) :]
+        local_file_path = f"{local_dir}/" + obj.key[len(key) :]
         local_file_dir = os.path.dirname(local_file_path)
         os.makedirs(local_file_dir, exist_ok=True)
         bucket_obj.download_file(obj.key, local_file_path)
@@ -270,7 +270,7 @@ def delete_s3_directory(s3_resource, bucket: str, key: str):
     """ Delete S3 directory recursively """
     bucket_obj = s3_resource.Bucket(bucket)
     if key != "" and not key.endswith("/"):
-        key = key + "/"
+        key += "/"
     for obj in bucket_obj.objects.filter(Prefix=key):
         obj.delete()
 

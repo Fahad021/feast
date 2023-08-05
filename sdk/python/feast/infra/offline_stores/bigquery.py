@@ -66,9 +66,7 @@ class BigQueryOfflineStore(OfflineStore):
 
         partition_by_join_key_string = ", ".join(join_key_columns)
         if partition_by_join_key_string != "":
-            partition_by_join_key_string = (
-                "PARTITION BY " + partition_by_join_key_string
-            )
+            partition_by_join_key_string = f"PARTITION BY {partition_by_join_key_string}"
         timestamps = [event_timestamp_column]
         if created_timestamp_column:
             timestamps.append(created_timestamp_column)
@@ -149,9 +147,7 @@ class BigQueryRetrievalJob(RetrievalJob):
         self.config = config
 
     def to_df(self):
-        # TODO: Ideally only start this job when the user runs "get_historical_features", not when they run to_df()
-        df = self.client.query(self.query).to_dataframe(create_bqstorage_client=True)
-        return df
+        return self.client.query(self.query).to_dataframe(create_bqstorage_client=True)
 
     def to_sql(self) -> str:
         """
@@ -187,9 +183,7 @@ class BigQueryRetrievalJob(RetrievalJob):
         bq_job = self.client.query(self.query, job_config=job_config)
 
         if job_config.dry_run:
-            print(
-                "This query will process {} bytes.".format(bq_job.total_bytes_processed)
-            )
+            print(f"This query will process {bq_job.total_bytes_processed} bytes.")
             return None
 
         block_until_done(client=self.client, bq_job=bq_job, timeout=timeout)

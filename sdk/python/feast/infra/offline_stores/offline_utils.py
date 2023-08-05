@@ -24,7 +24,7 @@ DEFAULT_ENTITY_DF_EVENT_TIMESTAMP_COL = "event_timestamp"
 
 
 def infer_event_timestamp_from_entity_df(entity_schema: Dict[str, np.dtype]) -> str:
-    if DEFAULT_ENTITY_DF_EVENT_TIMESTAMP_COL in entity_schema.keys():
+    if DEFAULT_ENTITY_DF_EVENT_TIMESTAMP_COL in entity_schema:
         return DEFAULT_ENTITY_DF_EVENT_TIMESTAMP_COL
 
     datetime_columns = [
@@ -33,13 +33,12 @@ def infer_event_timestamp_from_entity_df(entity_schema: Dict[str, np.dtype]) -> 
         if pd.core.dtypes.common.is_datetime64_any_dtype(dtype)
     ]
 
-    if len(datetime_columns) == 1:
-        print(
-            f"Using {datetime_columns[0]} as the event timestamp. To specify a column explicitly, please name it {DEFAULT_ENTITY_DF_EVENT_TIMESTAMP_COL}."
-        )
-        return datetime_columns[0]
-    else:
+    if len(datetime_columns) != 1:
         raise EntityTimestampInferenceException(DEFAULT_ENTITY_DF_EVENT_TIMESTAMP_COL)
+    print(
+        f"Using {datetime_columns[0]} as the event timestamp. To specify a column explicitly, please name it {DEFAULT_ENTITY_DF_EVENT_TIMESTAMP_COL}."
+    )
+    return datetime_columns[0]
 
 
 def assert_expected_columns_in_entity_df(
@@ -156,15 +155,18 @@ def build_point_in_time_query(
     template_context = {
         "left_table_query_string": left_table_query_string,
         "entity_df_event_timestamp_col": entity_df_event_timestamp_col,
-        "unique_entity_keys": set(
-            [entity for fv in feature_view_query_contexts for entity in fv.entities]
-        ),
-        "featureviews": [asdict(context) for context in feature_view_query_contexts],
+        "unique_entity_keys": {
+            entity
+            for fv in feature_view_query_contexts
+            for entity in fv.entities
+        },
+        "featureviews": [
+            asdict(context) for context in feature_view_query_contexts
+        ],
         "full_feature_names": full_feature_names,
     }
 
-    query = template.render(template_context)
-    return query
+    return template.render(template_context)
 
 
 def get_temp_entity_table_name() -> str:

@@ -32,11 +32,11 @@ class AbstractProducer:
         )
 
     def produce(self, topic: str, data: bytes):
-        message = "{} should implement a produce method".format(self.__class__.__name__)
+        message = f"{self.__class__.__name__} should implement a produce method"
         raise NotImplementedError(message)
 
     def flush(self, timeout: int):
-        message = "{} should implement a flush method".format(self.__class__.__name__)
+        message = f"{self.__class__.__name__} should implement a flush method"
         raise NotImplementedError(message)
 
     def _inc_pbar(self, meta):
@@ -109,10 +109,10 @@ class ConfluentProducer(AbstractProducer):
         Returns:
             int: Number of messages still in queue.
         """
-        messages = self.producer.flush(timeout=timeout)
-        if messages:
+        if messages := self.producer.flush(timeout=timeout):
             raise Exception("Not all Kafka messages are successfully delivered.")
-        return messages
+        else:
+            return messages
 
     def _delivery_callback(self, err: str, msg) -> None:
         """
@@ -183,10 +183,10 @@ class KafkaPythonProducer(AbstractProducer):
             KafkaTimeoutError: failure to flush buffered records within the
                 provided timeout
         """
-        messages = self.producer.flush(timeout=timeout)
-        if messages:
+        if messages := self.producer.flush(timeout=timeout):
             raise Exception("Not all Kafka messages are successfully delivered.")
-        return messages
+        else:
+            return messages
 
 
 def get_producer(

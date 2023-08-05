@@ -177,21 +177,21 @@ def apply_total(repo_config: RepoConfig, repo_path: Path, skip_source_validation
     for view in repo.feature_views:
         view.infer_features_from_input_source(repo_config)
 
-    repo_table_names = set(t.name for t in repo.feature_tables)
+    repo_table_names = {t.name for t in repo.feature_tables}
 
     for t in repo.feature_views:
         repo_table_names.add(t.name)
 
-    tables_to_delete = []
-    for registry_table in registry.list_feature_tables(project=project):
-        if registry_table.name not in repo_table_names:
-            tables_to_delete.append(registry_table)
-
-    views_to_delete = []
-    for registry_view in registry.list_feature_views(project=project):
-        if registry_view.name not in repo_table_names:
-            views_to_delete.append(registry_view)
-
+    tables_to_delete = [
+        registry_table
+        for registry_table in registry.list_feature_tables(project=project)
+        if registry_table.name not in repo_table_names
+    ]
+    views_to_delete = [
+        registry_view
+        for registry_view in registry.list_feature_views(project=project)
+        if registry_view.name not in repo_table_names
+    ]
     sys.dont_write_bytecode = False
     for entity in repo.entities:
         registry.apply_entity(entity, project=project, commit=False)
@@ -234,20 +234,19 @@ def apply_total(repo_config: RepoConfig, repo_path: Path, skip_source_validation
 
     infra_provider = get_provider(repo_config, repo_path)
 
-    all_to_delete: List[Union[FeatureTable, FeatureView]] = []
-    all_to_delete.extend(tables_to_delete)
+    all_to_delete: List[Union[FeatureTable, FeatureView]] = list(tables_to_delete)
     all_to_delete.extend(views_to_delete)
 
     all_to_keep: List[Union[FeatureTable, FeatureView]] = []
     all_to_keep.extend(repo.feature_tables)
     all_to_keep.extend(repo.feature_views)
 
-    entities_to_delete: List[Entity] = []
-    repo_entities_names = set([e.name for e in repo.entities])
-    for registry_entity in registry.list_entities(project=project):
-        if registry_entity.name not in repo_entities_names:
-            entities_to_delete.append(registry_entity)
-
+    repo_entities_names = {e.name for e in repo.entities}
+    entities_to_delete: List[Entity] = [
+        registry_entity
+        for registry_entity in registry.list_entities(project=project)
+        if registry_entity.name not in repo_entities_names
+    ]
     entities_to_keep: List[Entity] = repo.entities
 
     for name in [view.name for view in repo.feature_tables] + [

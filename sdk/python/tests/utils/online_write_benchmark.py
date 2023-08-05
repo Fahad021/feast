@@ -20,7 +20,7 @@ from feast.value_type import ValueType
 
 
 def create_driver_hourly_stats_feature_view(source):
-    driver_stats_feature_view = FeatureView(
+    return FeatureView(
         name="driver_stats",
         entities=["driver_id"],
         features=[
@@ -31,7 +31,6 @@ def create_driver_hourly_stats_feature_view(source):
         input=source,
         ttl=timedelta(hours=2),
     )
-    return driver_stats_feature_view
 
 
 def create_driver_hourly_stats_source(parquet_path):

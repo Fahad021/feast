@@ -109,7 +109,7 @@ class RedisOnlineStore(OnlineStore):
                     ...
 
                 it = iter(kv)
-                params.update(dict(zip(it, it)))
+                params |= dict(zip(it, it))
 
         return startup_nodes, params
 
@@ -196,8 +196,7 @@ class RedisOnlineStore(OnlineStore):
             res_val = dict(zip(requested_features, values))
 
             res_ts = Timestamp()
-            ts_val = res_val.pop(ts_key)
-            if ts_val:
+            if ts_val := res_val.pop(ts_key):
                 res_ts.ParseFromString(ts_val)
 
             res = {}

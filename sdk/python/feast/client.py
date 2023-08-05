@@ -95,7 +95,7 @@ class Client:
         """
 
         if options is None:
-            options = dict()
+            options = {}
         self._config = Config(options={**options, **kwargs})
 
         self._core_service_stub: Optional[CoreServiceStub] = None
@@ -373,13 +373,12 @@ class Client:
             raise NotImplementedError(
                 "Projects are not implemented for object store registry."
             )
-        else:
-            response = self._core_service.ListProjects(
-                ListProjectsRequest(),
-                timeout=self._config.getint(opt.GRPC_CONNECTION_TIMEOUT),
-                metadata=self._get_grpc_metadata(),
-            )
-            return list(response.projects)
+        response = self._core_service.ListProjects(
+            ListProjectsRequest(),
+            timeout=self._config.getint(opt.GRPC_CONNECTION_TIMEOUT),
+            metadata=self._get_grpc_metadata(),
+        )
+        return list(response.projects)
 
     def create_project(self, project: str):
         """
@@ -414,19 +413,18 @@ class Client:
             raise NotImplementedError(
                 "Projects are not implemented for object store registry."
             )
-        else:
-            try:
-                self._core_service.ArchiveProject(
-                    ArchiveProjectRequest(name=project),
-                    timeout=self._config.getint(opt.GRPC_CONNECTION_TIMEOUT),
-                    metadata=self._get_grpc_metadata(),
-                )
-            except grpc.RpcError as e:
-                raise grpc.RpcError(e.details())
+        try:
+            self._core_service.ArchiveProject(
+                ArchiveProjectRequest(name=project),
+                timeout=self._config.getint(opt.GRPC_CONNECTION_TIMEOUT),
+                metadata=self._get_grpc_metadata(),
+            )
+        except grpc.RpcError as e:
+            raise grpc.RpcError(e.details())
 
-            # revert to the default project
-            if self._project == project:
-                self._project = opt().PROJECT
+        # revert to the default project
+        if self._project == project:
+            self._project = opt().PROJECT
 
     def apply(
         self,
@@ -503,25 +501,24 @@ class Client:
 
         if self._use_object_store_registry:
             return self._registry.apply_entity(entity, project)
-        else:
-            entity.is_valid()
-            entity_proto = entity.to_spec_proto()
+        entity.is_valid()
+        entity_proto = entity.to_spec_proto()
 
-            # Convert the entity to a request and send to Feast Core
-            try:
-                apply_entity_response = self._core_service.ApplyEntity(
-                    ApplyEntityRequest(project=project, spec=entity_proto),  # type: ignore
-                    timeout=self._config.getint(opt.GRPC_CONNECTION_TIMEOUT),
-                    metadata=self._get_grpc_metadata(),
-                )
-            except grpc.RpcError as e:
-                raise grpc.RpcError(e.details())
+        # Convert the entity to a request and send to Feast Core
+        try:
+            apply_entity_response = self._core_service.ApplyEntity(
+                ApplyEntityRequest(project=project, spec=entity_proto),  # type: ignore
+                timeout=self._config.getint(opt.GRPC_CONNECTION_TIMEOUT),
+                metadata=self._get_grpc_metadata(),
+            )
+        except grpc.RpcError as e:
+            raise grpc.RpcError(e.details())
 
-            # Extract the returned entity
-            applied_entity = Entity.from_proto(apply_entity_response.entity)
+        # Extract the returned entity
+        applied_entity = Entity.from_proto(apply_entity_response.entity)
 
-            # Deep copy from the returned entity to the local entity
-            entity._update_from_entity(applied_entity)
+        # Deep copy from the returned entity to the local entity
+        entity._update_from_entity(applied_entity)
 
     def list_entities(
         self, project: str = None, labels: Dict[str, str] = dict()
@@ -542,21 +539,20 @@ class Client:
 
         if self._use_object_store_registry:
             return self._registry.list_entities(project)
-        else:
-            filter = ListEntitiesRequest.Filter(project=project, labels=labels)
+        filter = ListEntitiesRequest.Filter(project=project, labels=labels)
 
-            # Get latest entities from Feast Core
-            entity_protos = self._core_service.ListEntities(
-                ListEntitiesRequest(filter=filter), metadata=self._get_grpc_metadata(),
-            )
+        # Get latest entities from Feast Core
+        entity_protos = self._core_service.ListEntities(
+            ListEntitiesRequest(filter=filter), metadata=self._get_grpc_metadata(),
+        )
 
-            # Extract entities and return
-            entities = []
-            for entity_proto in entity_protos.entities:
-                entity = Entity.from_proto(entity_proto)
-                entity._client = self
-                entities.append(entity)
-            return entities
+        # Extract entities and return
+        entities = []
+        for entity_proto in entity_protos.entities:
+            entity = Entity.from_proto(entity_proto)
+            entity._client = self
+            entities.append(entity)
+        return entities
 
     def get_entity(self, name: str, project: str = None) -> Entity:
         """
@@ -578,17 +574,16 @@ class Client:
 
         if self._use_object_store_registry:
             return self._registry.get_entity(name, project)
-        else:
-            try:
-                get_entity_response = self._core_service.GetEntity(
-                    GetEntityRequest(project=project, name=name.strip()),
-                    metadata=self._get_grpc_metadata(),
-                )
-            except grpc.RpcError as e:
-                raise grpc.RpcError(e.details())
-            entity = Entity.from_proto(get_entity_response.entity)
+        try:
+            get_entity_response = self._core_service.GetEntity(
+                GetEntityRequest(project=project, name=name.strip()),
+                metadata=self._get_grpc_metadata(),
+            )
+        except grpc.RpcError as e:
+            raise grpc.RpcError(e.details())
+        entity = Entity.from_proto(get_entity_response.entity)
 
-            return entity
+        return entity
 
     def apply_feature_table(
         self,
@@ -626,27 +621,26 @@ class Client:
 
         if self._use_object_store_registry:
             return self._registry.apply_feature_table(feature_table, project)
-        else:
-            feature_table.is_valid()
-            feature_table_proto = feature_table.to_spec_proto()
+        feature_table.is_valid()
+        feature_table_proto = feature_table.to_spec_proto()
 
-            # Convert the feature table to a request and send to Feast Core
-            try:
-                apply_feature_table_response = self._core_service.ApplyFeatureTable(
-                    ApplyFeatureTableRequest(project=project, table_spec=feature_table_proto),  # type: ignore
-                    timeout=self._config.getint(opt.GRPC_CONNECTION_TIMEOUT),
-                    metadata=self._get_grpc_metadata(),
-                )
-            except grpc.RpcError as e:
-                raise grpc.RpcError(e.details())
-
-            # Extract the returned feature table
-            applied_feature_table = FeatureTable.from_proto(
-                apply_feature_table_response.table
+        # Convert the feature table to a request and send to Feast Core
+        try:
+            apply_feature_table_response = self._core_service.ApplyFeatureTable(
+                ApplyFeatureTableRequest(project=project, table_spec=feature_table_proto),  # type: ignore
+                timeout=self._config.getint(opt.GRPC_CONNECTION_TIMEOUT),
+                metadata=self._get_grpc_metadata(),
             )
+        except grpc.RpcError as e:
+            raise grpc.RpcError(e.details())
 
-            # Deep copy from the returned feature table to the local entity
-            feature_table._update_from_feature_table(applied_feature_table)
+        # Extract the returned feature table
+        applied_feature_table = FeatureTable.from_proto(
+            apply_feature_table_response.table
+        )
+
+        # Deep copy from the returned feature table to the local entity
+        feature_table._update_from_feature_table(applied_feature_table)
 
     def list_feature_tables(
         self, project: str = None, labels: Dict[str, str] = dict()
@@ -666,22 +660,21 @@ class Client:
 
         if self._use_object_store_registry:
             return self._registry.list_feature_tables(project)
-        else:
-            filter = ListFeatureTablesRequest.Filter(project=project, labels=labels)
+        filter = ListFeatureTablesRequest.Filter(project=project, labels=labels)
 
-            # Get latest feature tables from Feast Core
-            feature_table_protos = self._core_service.ListFeatureTables(
-                ListFeatureTablesRequest(filter=filter),
-                metadata=self._get_grpc_metadata(),
-            )
+        # Get latest feature tables from Feast Core
+        feature_table_protos = self._core_service.ListFeatureTables(
+            ListFeatureTablesRequest(filter=filter),
+            metadata=self._get_grpc_metadata(),
+        )
 
-            # Extract feature tables and return
-            feature_tables = []
-            for feature_table_proto in feature_table_protos.tables:
-                feature_table = FeatureTable.from_proto(feature_table_proto)
-                feature_table._client = self
-                feature_tables.append(feature_table)
-            return feature_tables
+        # Extract feature tables and return
+        feature_tables = []
+        for feature_table_proto in feature_table_protos.tables:
+            feature_table = FeatureTable.from_proto(feature_table_proto)
+            feature_table._client = self
+            feature_tables.append(feature_table)
+        return feature_tables
 
     def get_feature_table(self, name: str, project: str = None) -> FeatureTable:
         """
@@ -703,15 +696,14 @@ class Client:
 
         if self._use_object_store_registry:
             return self._registry.get_feature_table(name, project)
-        else:
-            try:
-                get_feature_table_response = self._core_service.GetFeatureTable(
-                    GetFeatureTableRequest(project=project, name=name.strip()),
-                    metadata=self._get_grpc_metadata(),
-                )
-            except grpc.RpcError as e:
-                raise grpc.RpcError(e.details())
-            return FeatureTable.from_proto(get_feature_table_response.table)
+        try:
+            get_feature_table_response = self._core_service.GetFeatureTable(
+                GetFeatureTableRequest(project=project, name=name.strip()),
+                metadata=self._get_grpc_metadata(),
+            )
+        except grpc.RpcError as e:
+            raise grpc.RpcError(e.details())
+        return FeatureTable.from_proto(get_feature_table_response.table)
 
     def delete_feature_table(self, name: str, project: str = None) -> None:
         """
@@ -727,14 +719,13 @@ class Client:
 
         if self._use_object_store_registry:
             return self._registry.delete_feature_table(name, project)
-        else:
-            try:
-                self._core_service.DeleteFeatureTable(
-                    DeleteFeatureTableRequest(project=project, name=name.strip()),
-                    metadata=self._get_grpc_metadata(),
-                )
-            except grpc.RpcError as e:
-                raise grpc.RpcError(e.details())
+        try:
+            self._core_service.DeleteFeatureTable(
+                DeleteFeatureTableRequest(project=project, name=name.strip()),
+                metadata=self._get_grpc_metadata(),
+            )
+        except grpc.RpcError as e:
+            raise grpc.RpcError(e.details())
 
     def list_features_by_ref(
         self,
@@ -765,26 +756,25 @@ class Client:
             raise NotImplementedError(
                 "This function is not implemented for object store registry."
             )
-        else:
-            if project is None:
-                project = self.project
+        if project is None:
+            project = self.project
 
-            filter = ListFeaturesRequest.Filter(
-                project=project, entities=entities, labels=labels
-            )
+        filter = ListFeaturesRequest.Filter(
+            project=project, entities=entities, labels=labels
+        )
 
-            feature_protos = self._core_service.ListFeatures(
-                ListFeaturesRequest(filter=filter), metadata=self._get_grpc_metadata(),
-            )
+        feature_protos = self._core_service.ListFeatures(
+            ListFeaturesRequest(filter=filter), metadata=self._get_grpc_metadata(),
+        )
 
-            # Extract features and return
-            features_dict = {}
-            for ref_str, feature_proto in feature_protos.features.items():
-                feature_ref = FeatureRef.from_str(ref_str)
-                feature = Feature.from_proto(feature_proto)
-                features_dict[feature_ref] = feature
+        # Extract features and return
+        features_dict = {}
+        for ref_str, feature_proto in feature_protos.features.items():
+            feature_ref = FeatureRef.from_str(ref_str)
+            feature = Feature.from_proto(feature_proto)
+            features_dict[feature_ref] = feature
 
-            return features_dict
+        return features_dict
 
     def ingest(
         self,

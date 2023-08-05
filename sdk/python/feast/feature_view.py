@@ -75,7 +75,7 @@ class FeatureView:
 
         _features = features or []
 
-        cols = [entity for entity in entities] + [feat.name for feat in _features]
+        cols = list(entities) + [feat.name for feat in _features]
         for col in cols:
             if _input.field_mapping is not None and col in _input.field_mapping.keys():
                 raise ValueError(
@@ -114,11 +114,9 @@ class FeatureView:
     def __getitem__(self, item) -> FeatureViewProjection:
         assert isinstance(item, list)
 
-        referenced_features = []
-        for feature in self.features:
-            if feature.name in item:
-                referenced_features.append(feature)
-
+        referenced_features = [
+            feature for feature in self.features if feature.name in item
+        ]
         return FeatureViewProjection(self.name, referenced_features)
 
     def __eq__(self, other):
@@ -141,10 +139,7 @@ class FeatureView:
             return False
         if self.input != other.input:
             return False
-        if self.stream_source != other.stream_source:
-            return False
-
-        return True
+        return self.stream_source == other.stream_source
 
     def is_valid(self):
         """
@@ -225,7 +220,7 @@ class FeatureView:
         )
         feature_view = cls(
             name=feature_view_proto.spec.name,
-            entities=[entity for entity in feature_view_proto.spec.entities],
+            entities=list(feature_view_proto.spec.entities),
             features=[
                 Feature(
                     name=feature.name,
@@ -263,7 +258,7 @@ class FeatureView:
     def most_recent_end_time(self) -> Optional[datetime]:
         if len(self.materialization_intervals) == 0:
             return None
-        return max([interval[1] for interval in self.materialization_intervals])
+        return max(interval[1] for interval in self.materialization_intervals)
 
     def infer_features_from_input_source(self, config: RepoConfig):
         if not self.features:
@@ -293,8 +288,8 @@ class FeatureView:
                         )
                     )
 
-            if not self.features:
-                raise RegistryInferenceFailure(
-                    "FeatureView",
-                    f"Could not infer Features for the FeatureView named {self.name}.",
-                )
+        if not self.features:
+            raise RegistryInferenceFailure(
+                "FeatureView",
+                f"Could not infer Features for the FeatureView named {self.name}.",
+            )

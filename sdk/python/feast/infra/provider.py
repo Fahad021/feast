@@ -219,25 +219,17 @@ def _get_column_names(
         reverse_field_mapping = {
             v: k for k, v in feature_view.input.field_mapping.items()
         }
-        event_timestamp_column = (
-            reverse_field_mapping[event_timestamp_column]
-            if event_timestamp_column in reverse_field_mapping.keys()
-            else event_timestamp_column
+        event_timestamp_column = reverse_field_mapping.get(
+            event_timestamp_column, event_timestamp_column
         )
         created_timestamp_column = (
             reverse_field_mapping[created_timestamp_column]
             if created_timestamp_column
-            and created_timestamp_column in reverse_field_mapping.keys()
+            and created_timestamp_column in reverse_field_mapping
             else created_timestamp_column
         )
-        join_keys = [
-            reverse_field_mapping[col] if col in reverse_field_mapping.keys() else col
-            for col in join_keys
-        ]
-        feature_names = [
-            reverse_field_mapping[col] if col in reverse_field_mapping.keys() else col
-            for col in feature_names
-        ]
+        join_keys = [reverse_field_mapping.get(col, col) for col in join_keys]
+        feature_names = [reverse_field_mapping.get(col, col) for col in feature_names]
     return (
         join_keys,
         feature_names,
@@ -251,9 +243,7 @@ def _run_field_mapping(
 ) -> pyarrow.Table:
     # run field mapping in the forward direction
     cols = table.column_names
-    mapped_cols = [
-        field_mapping[col] if col in field_mapping.keys() else col for col in cols
-    ]
+    mapped_cols = [field_mapping.get(col, col) for col in cols]
     table = table.rename_columns(mapped_cols)
     return table
 
@@ -274,10 +264,7 @@ def _convert_arrow_to_proto(
         with these quirks.
         """
 
-        if isinstance(ts, pandas.Timestamp):
-            return ts.to_pydatetime()
-        else:
-            return ts
+        return ts.to_pydatetime() if isinstance(ts, pandas.Timestamp) else ts
 
     for row in zip(*table.to_pydict().values()):
         entity_key = EntityKeyProto()

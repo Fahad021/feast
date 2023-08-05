@@ -172,8 +172,7 @@ class DatastoreOnlineStore(OnlineStore):
         iterable = iter(data)
 
         while True:
-            batch = list(itertools.islice(iterable, batch_size))
-            if len(batch) > 0:
+            if batch := list(itertools.islice(iterable, batch_size)):
                 yield batch
             else:
                 break

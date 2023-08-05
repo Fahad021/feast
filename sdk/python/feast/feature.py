@@ -35,19 +35,14 @@ class Feature:
         if not isinstance(dtype, ValueType):
             raise ValueError("dtype is not a valid ValueType")
         self._dtype = dtype
-        if labels is None:
-            self._labels = dict()  # type: MutableMapping
-        else:
-            self._labels = labels
+        self._labels = {} if labels is None else labels
 
     def __eq__(self, other):
-        if (
-            self.name != other.name
-            or self.dtype != other.dtype
-            or self.labels != other.labels
-        ):
-            return False
-        return True
+        return (
+            self.name == other.name
+            and self.dtype == other.dtype
+            and self.labels == other.labels
+        )
 
     def __lt__(self, other):
         return self.name < other.name
@@ -99,13 +94,11 @@ class Feature:
             Feature object
         """
 
-        feature = cls(
+        return cls(
             name=feature_proto.name,
             dtype=ValueType(feature_proto.value_type),
             labels=feature_proto.labels,
         )
-
-        return feature
 
 
 class FeatureRef:
@@ -162,9 +155,7 @@ class FeatureRef:
         return self.proto
 
     def __repr__(self):
-        # return string representation of the reference
-        ref_str = self.proto.feature_table + ":" + self.proto.name
-        return ref_str
+        return f"{self.proto.feature_table}:{self.proto.name}"
 
     def __str__(self):
         # readable string of the reference
@@ -182,6 +173,4 @@ def _build_feature_references(feature_ref_strs: List[str]) -> List[FeatureRefPro
     """
 
     feature_refs = [FeatureRef.from_str(ref_str) for ref_str in feature_ref_strs]
-    feature_ref_protos = [ref.to_proto() for ref in feature_refs]
-
-    return feature_ref_protos
+    return [ref.to_proto() for ref in feature_refs]
